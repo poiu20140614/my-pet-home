@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>智慧寵物家居 (思源柔黑/粉圓體版)</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Kosugi+Maru&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "cream": "#FFF9F0",
+                        "clay": "#D9AE94",
+                        "moss": "#8FA998",
+                        "terracotta": "#E07A5F",
+                        "sand": "#F2E9E4",
+                        "soft-blue": "#B8C2CC",
+                        "paw-yellow": "#F4D35E",
+                    },
+                    fontFamily: {
+                        "sans": ["Zen Maru Gothic", "Kosugi Maru", "sans-serif"],
+                        "rounded": ["Zen Maru Gothic", "Kosugi Maru", "sans-serif"]
+                    },
+                    borderRadius: {
+                        'super': '2rem',
+                    }
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer base {
+            body {
+                font-family: "Zen Maru Gothic", "Kosugi Maru", sans-serif;
+                background-color: #FFF9F0;
+                color: #5D544F;
+            }
+        }
+        .organic-card {
+            background: #FFFFFF;
+            border-radius: 2.5rem;
+            box-shadow: 0 10px 25px -5px rgba(217, 174, 148, 0.2);
+            border: 2px solid #F2E9E4;
+        }
+        .organic-button {
+            border-radius: 1.5rem;
+            transition: transform 0.2s ease;
+        }
+        .organic-button:active {
+            transform: scale(0.95);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #E07A5F;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        /* 讓全螢幕模式的過渡更平滑 */
+        #camera-section {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-cream selection:bg-clay/20 font-rounded">
+<div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto bg-cream pb-8 overflow-x-hidden">
+    
+    <header class="flex flex-col gap-2 px-8 pt-10 pb-4 sticky top-0 z-30 bg-cream/80 backdrop-blur-lg">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-clay tracking-wide">我的溫馨小窩</h1>
+            </div>
+            <div class="flex items-center gap-3">
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 px-6 space-y-8">
+        
+        <section id="camera-section" class="relative w-full aspect-[4/3] rounded-[3rem] overflow-hidden border-4 border-white shadow-xl bg-black">
+            <img id="camera-stream" alt="Live camera feed" class="w-full h-full object-cover" src="https://via.placeholder.com/640x480.png?text=Waiting+for+ESP32-CAM..."/>
+            <div class="absolute inset-0 bg-gradient-to-t from-clay/30 via-transparent to-transparent pointer-events-none"></div>
+            <div class="absolute top-5 left-5 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm z-10">
+                <span class="flex h-3 w-3 rounded-full bg-terracotta animate-pulse"></span>
+                <span id="pet-status" class="text-[12px] font-bold text-clay tracking-widest">寶貝正在午睡中</span>
+            </div>
+            <div class="absolute bottom-5 right-5 z-10">
+                <button id="btn-expand-camera" class="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+                    <span id="camera-icon" class="material-symbols-outlined text-clay">fullscreen</span>
+                </button>
+            </div>
+        </section>
+
+        <section>
+            <div class="flex items-center justify-between mb-4 px-2">
+                <h2 class="text-xl font-bold text-clay flex items-center gap-2">
+                    <span class="material-symbols-outlined text-terracotta">potted_plant</span>舒適度偵測
+                </h2>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="organic-card p-5 flex flex-col justify-between h-36">
+                    <div class="flex justify-between items-start">
+                        <div class="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-terracotta">device_thermostat</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-stone-400 block mb-1">溫度</span>
+                        <div class="flex items-baseline gap-1">
+                            <span id="temp-indoor" class="text-3xl font-bold text-stone-700">26</span>
+                            <span class="text-sm text-stone-400">°C</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="organic-card p-5 flex flex-col justify-between h-36">
+                    <div class="flex justify-between items-start">
+                        <div class="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-blue-400">humidity_mid</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-stone-400 block mb-1">濕度</span>
+                        <div class="flex items-baseline gap-1">
+                            <span id="humidity" class="text-3xl font-bold text-stone-700">55</span>
+                            <span class="text-sm text-stone-400">%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="organic-card p-5 flex flex-col justify-between h-36">
+                    <div class="flex justify-between items-start">
+                        <div class="w-10 h-10 bg-green-50 rounded-2xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-moss">air</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-stone-400 block mb-1">空氣品質</span>
+                        <div class="flex items-baseline gap-1">
+                            <span id="air-quality" class="text-3xl font-bold text-moss">清新</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="organic-card p-5 flex flex-col justify-between h-36">
+                    <div class="flex justify-between items-start">
+                        <div class="w-10 h-10 bg-yellow-50 rounded-2xl flex items-center justify-center">
+                            <span class="material-symbols-outlined text-paw-yellow">sunny</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-stone-400 block mb-1">採光係數</span>
+                        <div class="flex items-baseline gap-1">
+                            <span id="sunlight-status" class="text-3xl font-bold text-stone-700">適中</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="organic-card p-6 border-moss/20 bg-moss/5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-moss flex items-center gap-2">
+                    <span class="material-symbols-outlined">eco</span>愛地球小管家
+                </h2>
+                <span class="text-[10px] font-bold text-moss uppercase">蓄電池飽滿度</span>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center px-1">
+                    <span class="text-xs text-moss font-bold">太陽能儲備</span>
+                    <span id="battery-text" class="text-lg font-bold text-moss">85%</span>
+                </div>
+                <div class="w-full bg-white rounded-full h-4 overflow-hidden border-2 border-moss/10">
+                    <div id="battery-bar" class="bg-gradient-to-r from-moss to-moss/60 h-full rounded-full transition-all duration-500" style="width: 85%"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="space-y-5">
+            <div class="flex items-center px-2">
+                <h2 class="text-xl font-bold text-clay flex items-center gap-2">
+                    <span class="material-symbols-outlined text-terracotta">settings_accessibility</span>寵物親親控制
+                </h2>
+            </div>
+            
+            <div class="organic-card p-6 space-y-5">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <span class="material-symbols-outlined text-terracotta text-2xl">pets</span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-stone-700">智慧點心機</h3>
+                            <p id="last-fed-time" class="text-[12px] text-stone-400 font-bold uppercase">最後餵食：2小時前</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <div class="flex gap-3">
+                        <div class="flex-1 flex items-center justify-between bg-cream rounded-2xl border-2 border-sand px-4 py-3">
+                            <button id="btn-feed-minus" class="text-clay font-bold text-xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-white">-</button>
+                            <span id="feed-amount" class="text-lg font-bold text-stone-700">50g</span>
+                            <button id="btn-feed-plus" class="text-clay font-bold text-xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-white">+</button>
+                        </div>
+                        <button id="btn-feed-now" class="px-6 py-3 bg-terracotta text-white font-bold text-lg rounded-2xl shadow-lg shadow-terracotta/20 organic-button">
+                            立即餵食
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-3 bg-cream rounded-2xl border-2 border-sand px-4 py-3">
+                        <span class="material-symbols-outlined text-clay text-lg">event_repeat</span>
+                        <select id="schedule-select" class="flex-1 bg-transparent border-none text-sm font-bold text-stone-600 focus:ring-0 p-0">
+                            <option value="none">定時設定：無</option>
+                            <option value="1">每隔 1 小時餵食一次</option>
+                            <option value="2">每隔 2 小時餵食一次</option>
+                            <option value="4">每隔 4 小時餵食一次</option>
+                            <option value="6">每隔 6 小時餵食一次</option>
+                            <option value="8">每隔 8 小時餵食一次</option>
+                            <option value="12">每隔 12 小時餵食一次</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div id="card-awning" class="organic-card p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                    <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-400">
+                        <span class="material-symbols-outlined text-2xl">wb_twilight</span>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-stone-400 block">小窩遮陽</span>
+                        <span id="awning-status" class="text-sm font-bold text-blue-500">已開啟</span>
+                    </div>
+                </div>
+                <div id="card-lock" class="organic-card p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                    <div class="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center text-stone-400">
+                        <span class="material-symbols-outlined text-2xl">door_front</span>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-stone-400 block">安全門鎖</span>
+                        <span id="lock-status" class="text-sm font-bold text-stone-500">鎖定中</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div id="card-thermostat" class="organic-card p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                    <div class="w-12 h-12 bg-cyan-50 rounded-full flex items-center justify-center text-cyan-400">
+                        <span class="material-symbols-outlined text-2xl">thermostat</span>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-stone-400 block">恆溫控制</span>
+                        <span id="thermostat-status" class="text-sm font-bold text-cyan-500">26°C</span>
+                    </div>
+                </div>
+                <div id="card-fan" class="organic-card p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                    <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-clay">
+                        <span class="material-symbols-outlined text-2xl">mode_fan</span>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-stone-400 block">循環風扇</span>
+                        <span id="fan-status" class="text-sm font-bold text-stone-500">中速</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="organic-card p-6 space-y-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-yellow-50 rounded-full flex items-center justify-center">
+                            <span class="material-symbols-outlined text-paw-yellow">lightbulb</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-stone-700">暖心夜燈</h3>
+                    </div>
+                    <span id="light-text" class="text-lg font-bold text-paw-yellow">75%</span>
+                </div>
+                <input id="light-slider" class="w-full h-3 bg-cream rounded-full appearance-none cursor-pointer custom-slider border border-sand" max="100" min="0" type="range" value="75"/>
+            </div>
+
+        </section>
+    </main>
+</div>
+
+    <script>
+        // --- 1. 攝影機放大/縮小邏輯 ---
+        const btnExpandCamera = document.getElementById('btn-expand-camera');
+        const cameraSection = document.getElementById('camera-section');
+        const cameraIcon = document.getElementById('camera-icon');
+        let isCameraExpanded = false;
+
+        btnExpandCamera.addEventListener('click', () => {
+            isCameraExpanded = !isCameraExpanded;
+            if (isCameraExpanded) {
+                // 進入全螢幕模式
+                cameraSection.classList.remove('relative', 'aspect-[4/3]', 'rounded-[3rem]', 'border-4');
+                cameraSection.classList.add('fixed', 'inset-0', 'z-50', 'w-full', 'h-full', 'rounded-none');
+                cameraIcon.innerText = 'fullscreen_exit'; // 改變圖示為縮小
+            } else {
+                // 恢復原本大小
+                cameraSection.classList.add('relative', 'aspect-[4/3]', 'rounded-[3rem]', 'border-4');
+                cameraSection.classList.remove('fixed', 'inset-0', 'z-50', 'w-full', 'h-full', 'rounded-none');
+                cameraIcon.innerText = 'fullscreen'; // 改變圖示為放大
+            }
+        });
+
+        // --- 2. 寵物狀態動態切換邏輯 ---
+        const petStatusSpan = document.getElementById('pet-status');
+        const statusList = ['寶貝正在午睡中', '在窩裡耍寶', '出門探險了', '盯著鏡頭看', '正在開心吃點心'];
+        
+        setInterval(() => {
+            // 隨機挑選一個狀態
+            const randomStatus = statusList[Math.floor(Math.random() * statusList.length)];
+            petStatusSpan.innerText = randomStatus;
+        }, 10000); // 每 10 秒切換一次
+
+        // --- 3. 餵食器與時間邏輯 ---
+        const feedAmountSpan = document.getElementById('feed-amount');
+        const btnMinus = document.getElementById('btn-feed-minus');
+        const btnPlus = document.getElementById('btn-feed-plus');
+        const btnFeedNow = document.getElementById('btn-feed-now');
+        const lastFedTimeSpan = document.getElementById('last-fed-time');
+        
+        let currentAmount = 50; 
+        // 假設初始設定為 2 小時前餵過 (以毫秒計算)
+        let lastFedTimestamp = Date.now() - (2 * 60 * 60 * 1000); 
+
+        // 更新最後餵食時間的文字
+        function updateLastFedText() {
+            const now = Date.now();
+            const diffMinutes = Math.floor((now - lastFedTimestamp) / (1000 * 60)); // 換算成相差幾分鐘
+
+            if (diffMinutes < 1) {
+                lastFedTimeSpan.innerText = '最後餵食：剛剛';
+            } else if (diffMinutes < 60) {
+                lastFedTimeSpan.innerText = `最後餵食：${diffMinutes}分鐘前`;
+            } else {
+                const diffHours = Math.floor(diffMinutes / 60);
+                lastFedTimeSpan.innerText = `最後餵食：${diffHours}小時前`;
+            }
+        }
+
+        // 每分鐘自動更新一次時間文字
+        setInterval(updateLastFedText, 60000);
+
+        btnMinus.addEventListener('click', () => {
+            if (currentAmount > 10) {
+                currentAmount -= 10;
+                feedAmountSpan.innerText = currentAmount + 'g';
+            }
+        });
+
+        btnPlus.addEventListener('click', () => {
+            if (currentAmount < 200) {
+                currentAmount += 10;
+                feedAmountSpan.innerText = currentAmount + 'g';
+            }
+        });
+
+        // --- 處理「立即餵食」按鈕的真實發送 ---
+        btnFeedNow.addEventListener('click', () => {
+            // 顯示準備餵食的視覺回饋
+            btnFeedNow.innerText = "餵食傳送中...";
+            
+            // 呼叫 ESP32 的 API (請換成你 ESP32 實際的 IP)
+            fetch(`http://192.168.1.100/api/feed?amount=${currentAmount}`)
+                .then(response => response.json())
+                .then(result => {
+                    if(result.status === "success") {
+                        alert(`小管家：已經把指令傳給馬達囉！將餵食 ${currentAmount}g！`);
+                        // 重置文字與最後餵食時間
+                        btnFeedNow.innerText = "立即餵食";
+                        lastFedTimestamp = Date.now();
+                        updateLastFedText();
+                    }
+                })
+                .catch(error => {
+                    console.error("餵食指令發送失敗:", error);
+                    alert("連線失敗！請檢查 ESP32 是否在線。");
+                    btnFeedNow.innerText = "立即餵食";
+                });
+        });
+
+        // --- 4. 夜燈滑桿邏輯 ---
+        const lightSlider = document.getElementById('light-slider');
+        const lightText = document.getElementById('light-text');
+        lightSlider.addEventListener('input', () => {
+            lightText.innerText = lightSlider.value + '%';
+        });
+        
+        // --- 前端網頁與 ESP32 的 API 對接邏輯 ---
+
+        // 請將這裡換成你 ESP32 實際連上 Wi-Fi 後印出的 IP 地址
+        const esp32API = "http://192.168.1.100/api/all-status"; 
+
+        // 建立一個定時器，每 3 秒鐘去跟 ESP32 要一次最新資料
+        setInterval(() => {
+            fetch(esp32API)
+                .then(response => response.json()) // 把拿到的資料轉成 JSON 格式
+                .then(data => {
+                    console.log("成功收到主機資料：", data);
+
+                    // 1. 更新溫濕度 (對應 HTML 裡的 id="temp-indoor" 和 id="humidity")
+                    if(document.getElementById('temp-indoor')) {
+                        document.getElementById('temp-indoor').innerText = data.temp.toFixed(1);
+                    }
+                    if(document.getElementById('humidity')) {
+                        document.getElementById('humidity').innerText = data.hum.toFixed(0);
+                    }
+
+                    // 2. 更新電池電量與進度條 (對應 id="battery-text" 和 id="battery-bar")
+                    if(document.getElementById('battery-text')) {
+                        document.getElementById('battery-text').innerText = data.bat + '%';
+                    }
+                    if(document.getElementById('battery-bar')) {
+                        document.getElementById('battery-bar').style.width = data.bat + '%';
+                    }
+
+                    // 3. 更新風扇狀態 (對應 id="fan-status")
+                    if(document.getElementById('fan-status')) {
+                        document.getElementById('fan-status').innerText = data.fan;
+                        // 如果風扇全速運轉，可以把字體變色提醒
+                        if(data.fan === "全速運轉") {
+                            document.getElementById('fan-status').className = "text-sm font-bold text-terracotta";
+                        } else {
+                            document.getElementById('fan-status').className = "text-sm font-bold text-stone-500";
+                        }
+                    }
+
+                    // 4. 更新空氣品質 (利用 CO2 數值判斷，寫入 id="air-quality")
+                    if(document.getElementById('air-quality')) {
+                        const airSpan = document.getElementById('air-quality');
+                        // 假設 Mega 傳來的 JSON 裡有包含 CO2 (如果你有加進去的話)
+                        if(data.co2) {
+                            if (data.co2 < 800) {
+                                airSpan.innerText = "清新";
+                                airSpan.className = "text-3xl font-bold text-moss";
+                            } else if (data.co2 < 1200) {
+                                airSpan.innerText = "普通";
+                                airSpan.className = "text-3xl font-bold text-paw-yellow";
+                            } else {
+                                airSpan.innerText = "微悶";
+                                airSpan.className = "text-3xl font-bold text-terracotta";
+                            }
+                        }
+                    }
+                    
+                    // 5. 更新 PCM 恆溫狀態 (這裡你可以選擇把 UI 上的「恆溫控制」改成顯示 PCM 狀態)
+                    if(document.getElementById('thermostat-status')) {
+                        document.getElementById('thermostat-status').innerText = data.pcm_m;
+                    }
+
+                })
+                .catch(error => {
+                    console.error("無法連線到 ESP32，請檢查 Wi-Fi 或 IP 地址：", error);
+                });
+        }, 3000); // 3000 毫秒 = 3 秒更新一次 
+    </script>
+</body>
+</html>
