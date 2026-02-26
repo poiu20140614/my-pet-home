@@ -283,20 +283,6 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 mt-6">
-                <div onclick="setGlobalLock(true)" class="organic-card bg-red-50 text-center cursor-pointer active:scale-95 transition-transform">
-                    <div class="text-3xl mb-2">🔒</div>
-                    <div class="font-bold text-gray-700">全面強制固定</div>
-                    <div class="text-xs text-gray-500 mt-1">鎖死目前狀態，暫停所有自動化</div>
-                </div>
-
-                <div onclick="setGlobalLock(false)" class="organic-card bg-green-50 text-center cursor-pointer active:scale-95 transition-transform">
-                    <div class="text-3xl mb-2">自動</div>
-                    <div class="font-bold text-gray-700">恢復全自動</div>
-                    <div class="text-xs text-gray-500 mt-1">解除所有鎖定，交給感測器接管</div>
-                </div>
-            </div>
-
             <div class="organic-card relative p-6 space-y-4" id="card-light">
                 <span id="lock-icon-light" onclick="toggleSingleLock('light', 'lock-icon-light', event)" class="absolute top-2 right-3 text-xl cursor-pointer z-10">🔓</span>
                 
@@ -316,6 +302,17 @@
                     max="100" min="0" type="range" value="50"/>
             </div>
 
+            <div class="grid grid-cols-2 gap-4 mt-8">
+                <div id="btn-global-fix" onclick="setGlobalLock(true)" class="organic-card bg-red-50 text-center cursor-pointer p-4 active:scale-95 transition-all">
+                    <div class="text-3xl mb-1">🔒</div>
+                    <div class="font-bold text-gray-700">全面強制固定</div>
+                </div>
+                <div id="btn-global-auto" onclick="setGlobalLock(false)" class="organic-card bg-green-50 text-center cursor-pointer p-4 active:scale-95 transition-all">
+                    <div class="text-3xl mb-1">🌿</div>
+                    <div class="font-bold text-gray-700">恢復全自動</div>
+                </div>
+            </div>
+
         </section>
     </main>
 </div>
@@ -326,233 +323,221 @@
         // ==========================================
 
         // 【極度重要】請替換成你的 ESP32-CAM 真實 IP 位址！
-        const ESP32_IP = "http://192.168.1.100"; 
+        // --- 1. 設定區：請確保 IP 與 Mega 端的名稱對齊 ---
+        const ESP32_IP = "你的ESP32_IP"; // 例如 192.168.1.100
+        const OVERRIDE_DURATION = 5 * 60 * 1000; // 5分鐘手動鎖定時間
 
-        // --- 1. 新增：五分鐘手動鎖定狀態 ---
+        // 管理所有設備的「手動/固定」狀態
         let overrides = {
             awning: { isManual: false, isFixed: false, lastTime: 0 },
             lock: { isManual: false, isFixed: false, lastTime: 0 },
             fan: { isManual: false, isFixed: false, lastTime: 0 },
-            light: { isManual: false, isFixed: false, lastTime: 0 } // 新增夜燈
-            // pcm: { isManual: false, lastTime: 0 }
+            light: { isManual: false, isFixed: false, lastTime: 0 }
         };
-           
-        const OVERRIDE_DURATION = 5 * 60 * 1000; // 5分鐘 (毫秒)
 
-        // --- 2. 核心：切換功能的邏輯 (已整合 mode=temp 與鎖頭圖示連動) ---
-        function toggleDevice(device, cardId) {
-            const card = document.getElementById(cardId);
-            const statusEl = document.getElementById(device + '-status');
-            if (!statusEl || !card) return;
+        function toggleDevice(device, elementId) {
+            // 1. 先找出現在的狀態（開或關）
+            const el = document.getElementById(device + "-status");
+            const isActive = el && (el.innerText.includes("開") || el.innerText.includes("解鎖") || el.innerText.includes("全速"));
+            const newState = isActive ? "CLOSE" : "OPEN";
 
-            const now = Date.now();
-
-            // 防止連點：讓卡片變灰並失效 1 秒
-            card.style.pointerEvents = "none";
-            card.style.opacity = "0.5";
-            setTimeout(() => {
-                card.style.pointerEvents = "auto";
-                if (overrides[device].isManual) card.style.opacity = "0.7";
-                else card.style.opacity = "1";
-            }, 1000);
-
-            // 取得當前狀態並判斷下一步
-            let currentState = statusEl.innerText;
-            let nextState = "";
-
-            if (device === 'awning') nextState = (currentState.includes("開")) ? "CLOSE" : "OPEN";
-            else if (device === 'lock') nextState = (currentState.includes("解鎖")) ? "LOCK" : "UNLOCK";
-            else if (device === 'fan') nextState = (currentState.includes("停止") || currentState.includes("關")) ? "ON" : "OFF";
-
-            // 樂觀更新：先讓網頁文字變動，並進入「5分鐘暫時模式」
-            statusEl.innerText = "切換中...";
-            overrides[device].isManual = true;
-            overrides[device].isFixed = false; // 確保取消永久固定
-            overrides[device].lastTime = now;
-
-            // 將右上角的鎖頭強制切換為 🔓 (因為只是 5 分鐘暫時鎖定)
-            const lockIcon = document.getElementById(`lock-icon-${device}`);
-            if (lockIcon) lockIcon.innerText = "🔓";
-
-            // 發送 API 給 ESP32 (加上 mode=temp)
-            fetch(`${ESP32_IP}/api/toggle?device=${device}&state=${nextState}&mode=temp`)
-                .then(res => res.json())
-                .then(data => console.log(`${device} 指令傳送成功`))
-                .catch(err => alert("設定失敗！請檢查 ESP32 伺服器是否連線。"));
-        }
-
-        // --- 1. 攝影機放大/縮小邏輯 ---
-        const btnExpandCamera = document.getElementById('btn-expand-camera');
-        const cameraSection = document.getElementById('camera-section');
-        const cameraIcon = document.getElementById('camera-icon');
-        let isCameraExpanded = false;
-
-        btnExpandCamera.addEventListener('click', () => {
-            isCameraExpanded = !isCameraExpanded;
-            if (isCameraExpanded) {
-                cameraSection.classList.remove('relative', 'aspect-[4/3]', 'rounded-[3rem]', 'border-4');
-                cameraSection.classList.add('fixed', 'inset-0', 'z-50', 'w-full', 'h-full', 'rounded-none');
-                cameraIcon.innerText = 'fullscreen_exit';
-            } else {
-                cameraSection.classList.add('relative', 'aspect-[4/3]', 'rounded-[3rem]', 'border-4');
-                cameraSection.classList.remove('fixed', 'inset-0', 'z-50', 'w-full', 'h-full', 'rounded-none');
-                cameraIcon.innerText = 'fullscreen';
-            }
-        });
-
-        // --- 2. 餵食克數增減邏輯 ---
-        const feedAmountSpan = document.getElementById('feed-amount');
-        const btnMinus = document.getElementById('btn-feed-minus');
-        const btnPlus = document.getElementById('btn-feed-plus');
-        let currentAmount = 50; 
-
-        btnMinus.addEventListener('click', () => {
-            if (currentAmount > 10) {
-                currentAmount -= 10;
-                feedAmountSpan.innerText = currentAmount + 'g';
-            }
-        });
-
-        btnPlus.addEventListener('click', () => {
-            if (currentAmount < 200) {
-                currentAmount += 10;
-                feedAmountSpan.innerText = currentAmount + 'g';
-            }
-        });
-
-        // --- 3. 最後餵食時間計算邏輯 ---
-        const lastFedTimeSpan = document.getElementById('last-fed-time');
-        let lastFedTimestamp = Date.now() - (2 * 60 * 60 * 1000); // 預設2小時前
-
-        function updateLastFedText() {
-            const now = Date.now();
-            const diffMinutes = Math.floor((now - lastFedTimestamp) / (1000 * 60)); 
-
-            if (diffMinutes < 1) {
-                lastFedTimeSpan.innerText = '最後餵食：剛剛';
-            } else if (diffMinutes < 60) {
-                lastFedTimeSpan.innerText = `最後餵食：${diffMinutes}分鐘前`;
-            } else {
-                const diffHours = Math.floor(diffMinutes / 60);
-                lastFedTimeSpan.innerText = `最後餵食：${diffHours}小時前`;
-            }
-        }
-        setInterval(updateLastFedText, 60000); // 每分鐘更新一次文字
-
-        // --- 4. 【發送指令】手動立即餵食 ---
-        const btnFeedNow = document.getElementById('btn-feed-now');
-        btnFeedNow.addEventListener('click', () => {
-            btnFeedNow.innerText = "傳送中...";
-            
-            fetch(`${ESP32_IP}/api/feed?amount=${currentAmount}`)
-                .then(response => response.json())
-                .then(result => {
-                    if(result.status === "success") {
-                        alert(`小管家：已將指令傳給硬體！即將掉落 ${currentAmount}g 點心。`);
-                        btnFeedNow.innerText = "立即餵食";
-                        lastFedTimestamp = Date.now();
-                        updateLastFedText();
-                    }
+            // 2. 發送指令給 ESP32
+            fetch(`http://${ESP32_IP}/api/toggle?device=${device}&state=${newState}&mode=MANUAL`)
+                .then(response => {
+                    if (!response.ok) throw new Error("網路回應不正常");
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(device + " 設定成功");
+                    // 立即進入手動模式 5 分鐘
+                    overrides[device].isManual = true;
+                    overrides[device].lastTime = Date.now();
                 })
                 .catch(error => {
-                    console.error("餵食錯誤:", error);
-                    alert("餵食失敗！請檢查 ESP32 伺服器是否連線。");
-                    btnFeedNow.innerText = "立即餵食";
+                    // 💡 這裡就是你要的警告視窗
+                    console.error("連線失敗:", error);
+                    alert("設定失敗！請檢查 ESP32 伺服器是否連線。");
                 });
-        });
+        }
 
-        // --- 5. 【發送指令】定時餵食設定 ---
-        const scheduleSelect = document.getElementById('schedule-select');
-        scheduleSelect.addEventListener('change', (e) => {
-            let hours = e.target.value === "none" ? 0 : parseFloat(e.target.value);
+        function toggleSingleLock(device, iconId, event) {
+            event.stopPropagation(); // 防止點到鎖頭卻觸發到後面的卡片
             
-            fetch(`${ESP32_IP}/api/schedule?hours=${hours}&amount=${currentAmount}`)
-                .then(response => response.json())
-                .then(result => {
-                    if(result.status === "success") {
-                        if(hours === 0) {
-                            alert("小管家：已幫您取消自動定時餵食！");
-                        } else {
-                            alert(`小管家：設定完成！每隔 ${hours} 小時會自動餵食 ${currentAmount}g。`);
-                        }
-                    }
+            const isCurrentlyFixed = overrides[device].isFixed;
+            const newMode = isCurrentlyFixed ? "auto" : "fixed";
+
+            fetch(`http://${ESP32_IP}/api/toggle?device=${device}&state=KEEP&mode=${newMode}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("網路回應不正常");
+                    return response.json();
                 })
-                .catch(error => alert("設定失敗！請檢查 ESP32 伺服器是否連線。"));
-        });
-
-        // --- 6. 【獲取資料】自動向 ESP32 拿取最新感測器與硬體狀態 ---
-        function fetchSystemStatus() {
-            fetch(`http://${ESP32_IP}/api/all-status`)
-                .then(response => response.json())
                 .then(data => {
-                    const now = Date.now();
+                    // 成功後更新狀態
+                    overrides[device].isFixed = !isCurrentlyFixed;
+                    if (isCurrentlyFixed) overrides[device].isManual = false;
+                    
+                    // 更新圖示
+                    document.getElementById(iconId).innerText = overrides[device].isFixed ? " 🔒 " : " 🔓 ";
+                })
+                .catch(error => {
+                    // 💡 這裡也會跳出警告視窗
+                    console.error("連線失敗:", error);
+                    alert("設定失敗！請檢查 ESP32 伺服器是否連線。");
+                });
+        }
 
-                   
-        // --- 核心：統一更新邏輯的輔助函式 ---
+        let isAlerting = false; // 💡 增加一個「正在報警中」的旗標
+
+        function adjustLight(value) {
+            // 1. 更新網頁上的百分比文字 (這個沒連線也可以動，所以放外面)
+            const percent = Math.round(value );
+            const displayEl = document.getElementById('brightness-value');
+            if (displayEl) displayEl.innerText = percent + "%";
+
+            // 2. 發送請求
+            fetch(`http://${ESP32_IP}/api/light?brightness=${value}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("連線失敗");
+                    isAlerting = false; // 如果成功了，重置旗標
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("亮度設定成功");
+                    overrides[device].isManual = true;
+                    overrides[device].lastTime = Date.now();
+                })
+                .catch(error => {
+                    console.error("錯誤:", error);
+                    
+                    // 💡 關鍵：如果已經在跳警告了，就不要再跳第二次
+                    if (!isAlerting) {
+                        isAlerting = true; 
+                        alert("設定失敗！請檢查 ESP32 伺服器是否連線。");
+                        
+                        // 3秒後自動解除鎖定，讓下次調整還能跳警告
+                        setTimeout(() => { isAlerting = false; }, 3000);
+                    }
+                });
+        }
+
+        // 2. 核心更新邏輯：增加夜燈自動同步
         const updateLogic = (key, elementId, sensorValue) => {
             const el = document.getElementById(elementId);
             if (!el) return;
-            const card = el.closest('.organic-card');
-
-            // --- 1. 處理所有設備的顏色變化 (放在最外面，手動/自動都有效) ---
-            // A. 遮陽簾顏色
-            if (key === 'awning') {
-                if (sensorValue.includes("開")) {
-                    el.style.color = "#3b82f6"; // 藍色 (已開啟)
-                } else {
-                    el.style.color = "#888888"; // 灰色 (已關閉/收起)
-                }
-            } 
-            // B. 安全門鎖顏色
-            else if (key === 'lock') {
-                if (sensorValue.includes("解鎖")) {
-                    el.style.color = "#E07A5F"; // 磚紅色 (警告/解鎖中)
-                } else {
-                    el.style.color = "#5D544F"; // 深灰色 (安全/鎖定中)
-                }
-            } 
-            // C. 循環風扇顏色
-            else if (key === 'fan') {
-                if (sensorValue.includes("全速")) {
-                    el.className = "text-sm font-bold text-terracotta"; // 保留你的 Tailwind class
-                    el.style.color = "#E07A5F"; // 雙重保險
-                } else if (sensorValue.includes("通風") || sensorValue.includes("低速")) {
-                    el.className = "text-sm font-bold text-moss";
-                    el.style.color = "#6b8e23"; // 雙重保險
-                } else {
-                    el.className = "text-sm font-bold text-stone-500";
-                    el.style.color = "#888888";
-                }
-            }
-
-            // --- 2. 處理鎖定與數據更新 ---
-            // 防呆：如果是沒有設定手動鎖定的設備 (例如 pcm)，直接更新文字並結束
-            if (!overrides[key]) { 
-                el.innerText = sensorValue;
-                return;
-            }
-
+            
             const now = Date.now();
-            // 判斷是否鎖定：(被按下強制固定) 或 (手動模式且未滿 5 分鐘)
-            const isLocked = overrides[key].isFixed || (overrides[key].isManual && (now - overrides[key].lastTime < OVERRIDE_DURATION));
+            // 檢查是否處於「鎖定/5分鐘手動」期間
+            const isLocked = overrides[key].isFixed || (overrides[key].isManual && (now - overrides[key].lastTime < 5 * 60 * 1000));
 
             if (!isLocked) {
-                // 如果沒被鎖定：接受 Mega 傳來的自動數據
+                // --- 自動模式 ---
                 overrides[key].isManual = false;
-                overrides[key].isFixed = false;
-                el.innerText = sensorValue; // 顯示感測器傳回的真實文字
-                card.style.opacity = "1";   // 恢復卡片全亮
+
+                // A. 處理顏色反饋 (無論手動/自動，只要狀態對了就變色)
+                if (key === 'awning') {
+                    el.style.color = sensorValue.includes("開") ? "#3b82f6" : "#888";
+                } else if (key === 'lock') {
+                    el.style.color = sensorValue.includes("解鎖") ? "#E07A5F" : "#5D544F";
+                } else if (key === 'fan') {
+                    if (sensorValue.includes("全速")) el.style.color = "#E07A5F";
+                    else if (sensorValue.includes("通風")) el.style.color = "#829356";
+                    else el.style.color = "#888";
+                }
+                
+                // 如果是夜燈，要同步滑桿位置
+                if (key === 'light') {
+                    const slider = document.getElementById('light-slider');
+                    slider.value = sensorValue; // 讓滑桿跟著感測器跑
+                    el.innerText = "自動調節中: " + sensorValue + "%";
+                } else {
+                    el.innerText = sensorValue; // 更新遮陽、門鎖、風扇文字
+                }
+                
+                // 恢復外觀
+                el.closest('.organic-card').style.opacity = "1";
+                const icon = document.getElementById(`lock-icon-${key}`);
+                if(icon) icon.innerText = "🔓";
             } else {
-                // 如果鎖定中：讓卡片維持微透明 (0.7)，視覺提醒你現在是手動/固定模式
-                card.style.opacity = "0.7";
+                // --- 鎖定模式 ---
+                el.closest('.organic-card').style.opacity = "0.7";
+                const icon = document.getElementById(`lock-icon-${key}`);
+                if(icon) icon.innerText = "🔒";
             }
         };
 
-                    // 執行四個卡片的更新 )
+        // 3. 全局按鈕變色邏輯
+        function setGlobalLock(isLockAll) {
+            let hasAlerted = false;
+            const fixBtn = document.getElementById('btn-global-fix');
+            const autoBtn = document.getElementById('btn-global-auto');
+            const devices = ['awning', 'lock', 'fan', 'light'];
+            const mode = isLockAll ? "fixed" : "auto";
+
+            // 變色：深紅 vs 深綠
+            if (isLockAll) {
+                fixBtn.classList.replace('bg-red-50', 'bg-red-500');
+                fixBtn.classList.add('text-white');
+                autoBtn.className = "organic-card bg-green-50 text-center cursor-pointer p-4 transition-all";
+            } else {
+                autoBtn.classList.replace('bg-green-50', 'bg-green-500');
+                autoBtn.classList.add('text-white');
+                fixBtn.className = "organic-card bg-red-50 text-center cursor-pointer p-4 transition-all";
+                setTimeout(() => {
+                    autoBtn.className = "organic-card bg-green-50 text-center cursor-pointer p-4 transition-all";
+                }, 1000);
+            }
+
+            // 發送指令並更新狀態
+            devices.forEach(device => {
+                fetch(`http://${ESP32_IP}/api/toggle?device=${device}&state=KEEP&mode=${mode}`)
+                    .then(response => {
+                        // 檢查回應是否正常 (200 OK)
+                        if (!response.ok) throw new Error("伺服器回應異常");
+                        return response.json();
+                    })
+                    .then(() => {
+                        overrides[device].isFixed = isLockAll;
+                        if(!isLockAll) overrides[device].isManual = false;
+                        // 強制更新畫面圖示
+                        const icon = document.getElementById(`lock-icon-${device}`);
+                        if(icon) icon.innerText = isLockAll ? "🔒" : "🔓";
+                    })
+                    .catch(error => {
+                        // 2. 當連線失敗時執行這裡
+                        console.error(`${device} 設定出錯:`, error);
+
+                        // 如果還沒彈出過警告，才跳出 alert
+                        if (!hasAlerted) {
+                            alert("設定失敗！請檢查 ESP32 伺服器是否連線。");
+                            hasAlerted = true; // 標記為已警告，避免重複跳窗
+                        }
+                    });
+            });
+        }
+    
+        // 定時抓取資料 (每 3 秒)
+        setInterval(() => {
+            fetch(`http://${ESP32_IP}/api/data`)
+                .then(res => res.json())
+                .then(data => {
                     updateLogic('awning', 'awning-status', data.awning);
                     updateLogic('lock', 'lock-status', data.lock);
                     updateLogic('fan', 'fan-status', data.fan);
-                    //updateLogic('pcm', 'thermostat-status', data.pcm_m); 
+                    updateLogic('light', 'light-status', data.light_p); // 假設 Mega 傳回夜燈百分比為 light_p
+
+                    if (data.last_fed) {
+                        const fedEl = document.getElementById('last-fed-time');
+                        if (fedEl) {
+                            // 如果 ESP32 給我們 "14:30:05"，網頁就顯示 "最後餵食：14:30:05"
+                            fedEl.innerText = "最後餵食：" + data.last_fed;
+                            
+                            // (選配) 如果想讓它看起來更醒目，可以加顏色
+                            fedEl.style.color = "#E07A5F"; 
+                        }
+                    }
+                    
+                    // PCM 與 CO2 邏輯 (同你原本檔案中的寫法) 
+                    const now = Date.now();
 
                     // 更新溫濕度
                     if(data.temp) document.getElementById('temp-indoor').innerText = data.temp.toFixed(1);
@@ -616,57 +601,109 @@
                 .catch(error => {
                     console.log("等待硬體連線中...");
                 });
-        }
+        
+        // 啟動定時器，每 3 秒自動抓取一次狀態
+        }, 3000);
+        
 
-        // --- 處理「單一鎖頭」點擊 ---
-        function toggleSingleLock(device, iconId, event) {
-            event.stopPropagation(); // 阻擋點擊事件傳遞給底下的卡片
+        // --- 1. 攝影機放大/縮小邏輯 ---
+        const btnExpandCamera = document.getElementById('btn-expand-camera');
+        const cameraSection = document.getElementById('camera-section');
+        const cameraIcon = document.getElementById('camera-icon');
+        let isCameraExpanded = false;
+
+        btnExpandCamera.addEventListener('click', () => {
+            isCameraExpanded = !isCameraExpanded;
+            if (isCameraExpanded) {
+                cameraSection.classList.remove('relative', 'aspect-[4/3]', 'rounded-[3rem]', 'border-4');
+                cameraSection.classList.add('fixed', 'inset-0', 'z-50', 'w-full', 'h-full', 'rounded-none');
+                cameraIcon.innerText = 'fullscreen_exit';
+            } else {
+                cameraSection.classList.add('relative', 'aspect-[4/3]', 'rounded-[3rem]', 'border-4');
+                cameraSection.classList.remove('fixed', 'inset-0', 'z-50', 'w-full', 'h-full', 'rounded-none');
+                cameraIcon.innerText = 'fullscreen';
+            }
+        });
+
+        // --- 2. 餵食克數增減邏輯 ---
+        const feedAmountSpan = document.getElementById('feed-amount');
+        const btnMinus = document.getElementById('btn-feed-minus');
+        const btnPlus = document.getElementById('btn-feed-plus');
+        let currentAmount = 50; 
+
+        btnMinus.addEventListener('click', () => {
+            if (currentAmount > 10) {
+                currentAmount -= 10;
+                feedAmountSpan.innerText = currentAmount + 'g';
+            }
+        });
+
+        btnPlus.addEventListener('click', () => {
+            if (currentAmount < 200) {
+                currentAmount += 10;
+                feedAmountSpan.innerText = currentAmount + 'g';
+            }
+        });
+
+        // --- 3. 最後餵食時間計算邏輯 ---
+        //const lastFedTimeSpan = document.getElementById('last-fed-time');
+        //let lastFedTimestamp = Date.now() - (2 * 60 * 60 * 1000); // 預設2小時前
+        //function updateLastFedText() {
+        //    const now = Date.now();
+        //    const diffMinutes = Math.floor((now - lastFedTimestamp) / (1000 * 60));
+        //    if (diffMinutes < 1) {
+        //        lastFedTimeSpan.innerText = '最後餵食：剛剛';
+        //    } else if (diffMinutes < 60) {
+        //        lastFedTimeSpan.innerText = `最後餵食：${diffMinutes}分鐘前`;
+        //   } else {        
+        //        const diffHours = Math.floor(diffMinutes / 60);
+        //        lastFedTimeSpan.innerText = `最後餵食：${diffHours}小時前`;
+        //    }
+        //}
+
+        //setInterval(updateLastFedText, 60000); // 每分鐘更新一次文字
+
+        // --- 4. 【發送指令】手動立即餵食 ---
+        const btnFeedNow = document.getElementById('btn-feed-now');
+        btnFeedNow.addEventListener('click', () => {
+            btnFeedNow.innerText = "傳送中...";
             
-            // 判斷現在是不是固定狀態，並且反轉它
-            const isCurrentlyFixed = overrides[device].isFixed;
-            const newMode = isCurrentlyFixed ? "auto" : "fixed"; 
+            fetch(`${ESP32_IP}/api/feed?amount=${currentAmount}`)
+                .then(response => response.json())               
+                .then(data => {
+                    if (data.status === "success") {
+                        // 💡 小技巧：按下後立即改字，不用等 3 秒後的更新
+                        document.getElementById('last-fed-time').innerText = "最後餵食：剛剛";
+                        alert("小管家：點心噴發中！");
+                    }
+                    btn.innerText = "立即餵食";
+                })
+                .catch(error => {
+                    console.error("餵食錯誤:", error);
+                    alert("餵食失敗！請檢查 ESP32 伺服器是否連線。");
+                    btnFeedNow.innerText = "立即餵食";
+                });
+        });
+
+        // --- 5. 【發送指令】定時餵食設定 ---
+        const scheduleSelect = document.getElementById('schedule-select');
+        scheduleSelect.addEventListener('change', (e) => {
+            let hours = e.target.value === "none" ? 0 : parseFloat(e.target.value);
             
-            // 發送給 ESP32 (狀態傳 KEEP 代表只改鎖定模式，不動馬達)
-            fetch(`http://${ESP32_IP}/api/toggle?device=${device}&state=KEEP&mode=${newMode}`)
-                .then(() => {
-                    if (newMode === "fixed") {
-                        overrides[device].isFixed = true;
-                        overrides[device].isManual = true; // 強制固定也算是手動的一種
-                        document.getElementById(iconId).innerText = "🔒";
-                    } else {
-                        overrides[device].isFixed = false;
-                        overrides[device].isManual = false; // 解除固定，直接歸零
-                        document.getElementById(iconId).innerText = "🔓";
+            fetch(`${ESP32_IP}/api/schedule?hours=${hours}&amount=${currentAmount}`)
+                .then(response => response.json())
+                .then(result => {
+                    if(result.status === "success") {
+                        if(hours === 0) {
+                            alert("小管家：已幫您取消自動定時餵食！");
+                        } else {
+                            alert(`小管家：設定完成！每隔 ${hours} 小時會自動餵食 ${currentAmount}g。`);
+                        }
                     }
                 })
-                .catch(err => console.log("切換鎖定失敗"));
-                alert("設定失敗！請檢查 ESP32 伺服器是否連線。");
-        }
+                .catch(error => alert("設定失敗！請檢查 ESP32 伺服器是否連線。"));
+        });
 
-        // --- 處理「全局強制/解除」點擊 ---
-        function setGlobalLock(isLockAll) {
-            const newMode = isLockAll ? "fixed" : "auto";
-            const devices = ['awning', 'lock', 'fan']; // 受控的設備清單
-
-            devices.forEach(device => {
-                fetch(`http://${ESP32_IP}/api/toggle?device=${device}&state=KEEP&mode=${newMode}`)
-                    .then(() => {
-                        const icon = document.getElementById(`lock-icon-${device}`);
-                        if (isLockAll) {
-                            overrides[device].isFixed = true;
-                            overrides[device].isManual = true;
-                            if(icon) icon.innerText = "🔒";
-                        } else {
-                            overrides[device].isFixed = false;
-                            overrides[device].isManual = false;
-                            if(icon) icon.innerText = "🔓";
-                        }
-                    });
-            });
-        }
-
-        // 啟動定時器，每 3 秒自動抓取一次狀態
-        setInterval(fetchSystemStatus, 3000);
         // 網頁載入時先抓一次
         fetchSystemStatus();
 
