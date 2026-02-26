@@ -102,7 +102,7 @@
             <div class="absolute inset-0 bg-gradient-to-t from-clay/30 via-transparent to-transparent pointer-events-none"></div>
             <div class="absolute top-5 left-5 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm z-10">
                 <span class="flex h-3 w-3 rounded-full bg-terracotta animate-pulse"></span>
-                <span id="pet-status" class="text-[12px] font-bold text-clay tracking-widest">寶貝正在午睡中</span>
+                <span id="pet-status" class="text-[12px] font-bold text-clay tracking-widest">系統連線中...</span>
             </div>
             <div class="absolute bottom-5 right-5 z-10">
                 <button id="btn-expand-camera" class="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
@@ -127,7 +127,7 @@
                     <div>
                         <span class="text-xs font-bold text-stone-400 block mb-1">溫度</span>
                         <div class="flex items-baseline gap-1">
-                            <span id="temp-indoor" class="text-3xl font-bold text-stone-700">26</span>
+                            <span id="temp-indoor" class="text-3xl font-bold text-stone-700">--</span>
                             <span class="text-sm text-stone-400">°C</span>
                         </div>
                     </div>
@@ -141,7 +141,7 @@
                     <div>
                         <span class="text-xs font-bold text-stone-400 block mb-1">濕度</span>
                         <div class="flex items-baseline gap-1">
-                            <span id="humidity" class="text-3xl font-bold text-stone-700">55</span>
+                            <span id="humidity" class="text-3xl font-bold text-stone-700">--</span>
                             <span class="text-sm text-stone-400">%</span>
                         </div>
                     </div>
@@ -155,7 +155,7 @@
                     <div>
                         <span class="text-xs font-bold text-stone-400 block mb-1">空氣品質</span>
                         <div class="flex items-baseline gap-1">
-                            <span id="air-quality" class="text-3xl font-bold text-moss">清新</span>
+                            <span id="air-quality" class="text-3xl font-bold text-moss">--</span>
                         </div>
                     </div>
                 </div>
@@ -166,9 +166,9 @@
                         </div>
                     </div>
                     <div>
-                        <span class="text-xs font-bold text-stone-400 block mb-1">採光係數</span>
+                        <span class="text-xs font-bold text-stone-400 block mb-1">光照狀態</span>
                         <div class="flex items-baseline gap-1">
-                            <span id="sunlight-status" class="text-3xl font-bold text-stone-700">適中</span>
+                            <span id="sunlight-status" class="text-2xl font-bold text-stone-700">--</span>
                         </div>
                     </div>
                 </div>
@@ -185,10 +185,10 @@
             <div class="space-y-3">
                 <div class="flex justify-between items-center px-1">
                     <span class="text-xs text-moss font-bold">太陽能儲備</span>
-                    <span id="battery-text" class="text-lg font-bold text-moss">85%</span>
+                    <span id="battery-text" class="text-lg font-bold text-moss">--%</span>
                 </div>
                 <div class="w-full bg-white rounded-full h-4 overflow-hidden border-2 border-moss/10">
-                    <div id="battery-bar" class="bg-gradient-to-r from-moss to-moss/60 h-full rounded-full transition-all duration-500" style="width: 85%"></div>
+                    <div id="battery-bar" class="bg-gradient-to-r from-moss to-moss/60 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
         </section>
@@ -208,7 +208,7 @@
                         </div>
                         <div>
                             <h3 class="text-lg font-bold text-stone-700">智慧點心機</h3>
-                            <p id="last-fed-time" class="text-[12px] text-stone-400 font-bold uppercase">最後餵食：2小時前</p>
+                            <p id="last-fed-time" class="text-[12px] text-stone-400 font-bold uppercase">最後餵食：等待更新</p>
                         </div>
                     </div>
                 </div>
@@ -239,22 +239,24 @@
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <div id="card-awning" class="organic-card p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                <div id="card-awning" onclick="toggleDevice('awning', 'card-awning')" class="organic-card relative p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                    <span id="lock-icon-awning" onclick="toggleSingleLock('awning', 'lock-icon-awning', event)" class="absolute top-2 right-3 text-xl cursor-pointer z-10">🔓</span>
                     <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-400">
                         <span class="material-symbols-outlined text-2xl">wb_twilight</span>
                     </div>
                     <div>
                         <span class="text-xs font-bold text-stone-400 block">小窩遮陽</span>
-                        <span id="awning-status" class="text-sm font-bold text-blue-500">已開啟</span>
+                        <span id="awning-status" class="text-sm font-bold text-blue-500">--</span>
                     </div>
                 </div>
-                <div id="card-lock" class="organic-card p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                <div id="card-lock" onclick="toggleDevice('lock', 'card-lock')" class="organic-card relative p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                    <span id="lock-icon-lock" onclick="toggleSingleLock('lock', 'lock-icon-lock', event)" class="absolute top-2 right-3 text-xl cursor-pointer z-10">🔓</span>
                     <div class="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center text-stone-400">
                         <span class="material-symbols-outlined text-2xl">door_front</span>
                     </div>
                     <div>
                         <span class="text-xs font-bold text-stone-400 block">安全門鎖</span>
-                        <span id="lock-status" class="text-sm font-bold text-stone-500">鎖定中</span>
+                        <span id="lock-status" class="text-sm font-bold text-stone-500">--</span>
                     </div>
                 </div>
             </div>
@@ -265,22 +267,39 @@
                         <span class="material-symbols-outlined text-2xl">thermostat</span>
                     </div>
                     <div>
-                        <span class="text-xs font-bold text-stone-400 block">恆溫控制</span>
-                        <span id="thermostat-status" class="text-sm font-bold text-cyan-500">26°C</span>
+                        <span class="text-xs font-bold text-stone-400 block">相變恆溫</span>
+                        <span id="thermostat-status" class="text-sm font-bold text-cyan-500">--</span>
                     </div>
                 </div>
-                <div id="card-fan" class="organic-card p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                <div id="card-fan" onclick="toggleDevice('fan', 'card-fan')" class="organic-card relative p-5 flex flex-col gap-3 items-center text-center cursor-pointer hover:bg-cream transition-colors">
+                    <span id="lock-icon-fan" onclick="toggleSingleLock('fan', 'lock-icon-fan', event)" class="absolute top-2 right-3 text-xl cursor-pointer z-10">🔓</span>
                     <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-clay">
                         <span class="material-symbols-outlined text-2xl">mode_fan</span>
                     </div>
                     <div>
                         <span class="text-xs font-bold text-stone-400 block">循環風扇</span>
-                        <span id="fan-status" class="text-sm font-bold text-stone-500">中速</span>
+                        <span id="fan-status" class="text-sm font-bold text-stone-500">--</span>
                     </div>
                 </div>
             </div>
 
-            <div class="organic-card p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4 mt-6">
+                <div onclick="setGlobalLock(true)" class="organic-card bg-red-50 text-center cursor-pointer active:scale-95 transition-transform">
+                    <div class="text-3xl mb-2">🔒</div>
+                    <div class="font-bold text-gray-700">全面強制固定</div>
+                    <div class="text-xs text-gray-500 mt-1">鎖死目前狀態，暫停所有自動化</div>
+                </div>
+
+                <div onclick="setGlobalLock(false)" class="organic-card bg-green-50 text-center cursor-pointer active:scale-95 transition-transform">
+                    <div class="text-3xl mb-2">自動</div>
+                    <div class="font-bold text-gray-700">恢復全自動</div>
+                    <div class="text-xs text-gray-500 mt-1">解除所有鎖定，交給感測器接管</div>
+                </div>
+            </div>
+
+            <div class="organic-card relative p-6 space-y-4" id="card-light">
+                <span id="lock-icon-light" onclick="toggleSingleLock('light', 'lock-icon-light', event)" class="absolute top-2 right-3 text-xl cursor-pointer z-10">🔓</span>
+                
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-yellow-50 rounded-full flex items-center justify-center">
@@ -288,9 +307,13 @@
                         </div>
                         <h3 class="text-lg font-bold text-stone-700">暖心夜燈</h3>
                     </div>
-                    <span id="light-text" class="text-lg font-bold text-paw-yellow">75%</span>
+                    <span id="light-status" class="text-lg font-bold text-paw-yellow">自動調節中</span>
                 </div>
-                <input id="light-slider" class="w-full h-3 bg-cream rounded-full appearance-none cursor-pointer custom-slider border border-sand" max="100" min="0" type="range" value="75"/>
+
+                <input id="light-slider" 
+                    oninput="adjustLight(this.value)"
+                    class="w-full h-3 bg-cream rounded-full appearance-none cursor-pointer custom-slider border border-sand" 
+                    max="100" min="0" type="range" value="50"/>
             </div>
 
         </section>
@@ -298,6 +321,66 @@
 </div>
 
     <script>
+        // ==========================================
+        // 前端互動與資料串接邏輯
+        // ==========================================
+
+        // 【極度重要】請替換成你的 ESP32-CAM 真實 IP 位址！
+        const ESP32_IP = "http://192.168.1.100"; 
+
+        // --- 1. 新增：五分鐘手動鎖定狀態 ---
+        let overrides = {
+            awning: { isManual: false, isFixed: false, lastTime: 0 },
+            lock: { isManual: false, isFixed: false, lastTime: 0 },
+            fan: { isManual: false, isFixed: false, lastTime: 0 },
+            light: { isManual: false, isFixed: false, lastTime: 0 } // 新增夜燈
+            // pcm: { isManual: false, lastTime: 0 }
+        };
+           
+        const OVERRIDE_DURATION = 5 * 60 * 1000; // 5分鐘 (毫秒)
+
+        // --- 2. 核心：切換功能的邏輯 (已整合 mode=temp 與鎖頭圖示連動) ---
+        function toggleDevice(device, cardId) {
+            const card = document.getElementById(cardId);
+            const statusEl = document.getElementById(device + '-status');
+            if (!statusEl || !card) return;
+
+            const now = Date.now();
+
+            // 防止連點：讓卡片變灰並失效 1 秒
+            card.style.pointerEvents = "none";
+            card.style.opacity = "0.5";
+            setTimeout(() => {
+                card.style.pointerEvents = "auto";
+                if (overrides[device].isManual) card.style.opacity = "0.7";
+                else card.style.opacity = "1";
+            }, 1000);
+
+            // 取得當前狀態並判斷下一步
+            let currentState = statusEl.innerText;
+            let nextState = "";
+
+            if (device === 'awning') nextState = (currentState.includes("開")) ? "CLOSE" : "OPEN";
+            else if (device === 'lock') nextState = (currentState.includes("解鎖")) ? "LOCK" : "UNLOCK";
+            else if (device === 'fan') nextState = (currentState.includes("停止") || currentState.includes("關")) ? "ON" : "OFF";
+
+            // 樂觀更新：先讓網頁文字變動，並進入「5分鐘暫時模式」
+            statusEl.innerText = "切換中...";
+            overrides[device].isManual = true;
+            overrides[device].isFixed = false; // 確保取消永久固定
+            overrides[device].lastTime = now;
+
+            // 將右上角的鎖頭強制切換為 🔓 (因為只是 5 分鐘暫時鎖定)
+            const lockIcon = document.getElementById(`lock-icon-${device}`);
+            if (lockIcon) lockIcon.innerText = "🔓";
+
+            // 發送 API 給 ESP32 (加上 mode=temp)
+            fetch(`${ESP32_IP}/api/toggle?device=${device}&state=${nextState}&mode=temp`)
+                .then(res => res.json())
+                .then(data => console.log(`${device} 指令傳送成功`))
+                .catch(err => alert("設定失敗！請檢查 ESP32 伺服器是否連線。"));
+        }
+
         // --- 1. 攝影機放大/縮小邏輯 ---
         const btnExpandCamera = document.getElementById('btn-expand-camera');
         const cameraSection = document.getElementById('camera-section');
@@ -307,56 +390,21 @@
         btnExpandCamera.addEventListener('click', () => {
             isCameraExpanded = !isCameraExpanded;
             if (isCameraExpanded) {
-                // 進入全螢幕模式
                 cameraSection.classList.remove('relative', 'aspect-[4/3]', 'rounded-[3rem]', 'border-4');
                 cameraSection.classList.add('fixed', 'inset-0', 'z-50', 'w-full', 'h-full', 'rounded-none');
-                cameraIcon.innerText = 'fullscreen_exit'; // 改變圖示為縮小
+                cameraIcon.innerText = 'fullscreen_exit';
             } else {
-                // 恢復原本大小
                 cameraSection.classList.add('relative', 'aspect-[4/3]', 'rounded-[3rem]', 'border-4');
                 cameraSection.classList.remove('fixed', 'inset-0', 'z-50', 'w-full', 'h-full', 'rounded-none');
-                cameraIcon.innerText = 'fullscreen'; // 改變圖示為放大
+                cameraIcon.innerText = 'fullscreen';
             }
         });
 
-        // --- 2. 寵物狀態動態切換邏輯 ---
-        const petStatusSpan = document.getElementById('pet-status');
-        const statusList = ['寶貝正在午睡中', '在窩裡耍寶', '出門探險了', '盯著鏡頭看', '正在開心吃點心'];
-        
-        setInterval(() => {
-            // 隨機挑選一個狀態
-            const randomStatus = statusList[Math.floor(Math.random() * statusList.length)];
-            petStatusSpan.innerText = randomStatus;
-        }, 10000); // 每 10 秒切換一次
-
-        // --- 3. 餵食器與時間邏輯 ---
+        // --- 2. 餵食克數增減邏輯 ---
         const feedAmountSpan = document.getElementById('feed-amount');
         const btnMinus = document.getElementById('btn-feed-minus');
         const btnPlus = document.getElementById('btn-feed-plus');
-        const btnFeedNow = document.getElementById('btn-feed-now');
-        const lastFedTimeSpan = document.getElementById('last-fed-time');
-        
         let currentAmount = 50; 
-        // 假設初始設定為 2 小時前餵過 (以毫秒計算)
-        let lastFedTimestamp = Date.now() - (2 * 60 * 60 * 1000); 
-
-        // 更新最後餵食時間的文字
-        function updateLastFedText() {
-            const now = Date.now();
-            const diffMinutes = Math.floor((now - lastFedTimestamp) / (1000 * 60)); // 換算成相差幾分鐘
-
-            if (diffMinutes < 1) {
-                lastFedTimeSpan.innerText = '最後餵食：剛剛';
-            } else if (diffMinutes < 60) {
-                lastFedTimeSpan.innerText = `最後餵食：${diffMinutes}分鐘前`;
-            } else {
-                const diffHours = Math.floor(diffMinutes / 60);
-                lastFedTimeSpan.innerText = `最後餵食：${diffHours}小時前`;
-            }
-        }
-
-        // 每分鐘自動更新一次時間文字
-        setInterval(updateLastFedText, 60000);
 
         btnMinus.addEventListener('click', () => {
             if (currentAmount > 10) {
@@ -372,104 +420,256 @@
             }
         });
 
-        // --- 處理「立即餵食」按鈕的真實發送 ---
+        // --- 3. 最後餵食時間計算邏輯 ---
+        const lastFedTimeSpan = document.getElementById('last-fed-time');
+        let lastFedTimestamp = Date.now() - (2 * 60 * 60 * 1000); // 預設2小時前
+
+        function updateLastFedText() {
+            const now = Date.now();
+            const diffMinutes = Math.floor((now - lastFedTimestamp) / (1000 * 60)); 
+
+            if (diffMinutes < 1) {
+                lastFedTimeSpan.innerText = '最後餵食：剛剛';
+            } else if (diffMinutes < 60) {
+                lastFedTimeSpan.innerText = `最後餵食：${diffMinutes}分鐘前`;
+            } else {
+                const diffHours = Math.floor(diffMinutes / 60);
+                lastFedTimeSpan.innerText = `最後餵食：${diffHours}小時前`;
+            }
+        }
+        setInterval(updateLastFedText, 60000); // 每分鐘更新一次文字
+
+        // --- 4. 【發送指令】手動立即餵食 ---
+        const btnFeedNow = document.getElementById('btn-feed-now');
         btnFeedNow.addEventListener('click', () => {
-            // 顯示準備餵食的視覺回饋
-            btnFeedNow.innerText = "餵食傳送中...";
+            btnFeedNow.innerText = "傳送中...";
             
-            // 呼叫 ESP32 的 API (請換成你 ESP32 實際的 IP)
-            fetch(`http://192.168.1.100/api/feed?amount=${currentAmount}`)
+            fetch(`${ESP32_IP}/api/feed?amount=${currentAmount}`)
                 .then(response => response.json())
                 .then(result => {
                     if(result.status === "success") {
-                        alert(`小管家：已經把指令傳給馬達囉！將餵食 ${currentAmount}g！`);
-                        // 重置文字與最後餵食時間
+                        alert(`小管家：已將指令傳給硬體！即將掉落 ${currentAmount}g 點心。`);
                         btnFeedNow.innerText = "立即餵食";
                         lastFedTimestamp = Date.now();
                         updateLastFedText();
                     }
                 })
                 .catch(error => {
-                    console.error("餵食指令發送失敗:", error);
-                    alert("連線失敗！請檢查 ESP32 是否在線。");
+                    console.error("餵食錯誤:", error);
+                    alert("餵食失敗！請檢查 ESP32 伺服器是否連線。");
                     btnFeedNow.innerText = "立即餵食";
                 });
         });
 
-        // --- 4. 夜燈滑桿邏輯 ---
-        const lightSlider = document.getElementById('light-slider');
-        const lightText = document.getElementById('light-text');
-        lightSlider.addEventListener('input', () => {
-            lightText.innerText = lightSlider.value + '%';
+        // --- 5. 【發送指令】定時餵食設定 ---
+        const scheduleSelect = document.getElementById('schedule-select');
+        scheduleSelect.addEventListener('change', (e) => {
+            let hours = e.target.value === "none" ? 0 : parseFloat(e.target.value);
+            
+            fetch(`${ESP32_IP}/api/schedule?hours=${hours}&amount=${currentAmount}`)
+                .then(response => response.json())
+                .then(result => {
+                    if(result.status === "success") {
+                        if(hours === 0) {
+                            alert("小管家：已幫您取消自動定時餵食！");
+                        } else {
+                            alert(`小管家：設定完成！每隔 ${hours} 小時會自動餵食 ${currentAmount}g。`);
+                        }
+                    }
+                })
+                .catch(error => alert("設定失敗！請檢查 ESP32 伺服器是否連線。"));
         });
-        
-        // --- 前端網頁與 ESP32 的 API 對接邏輯 ---
 
-        // 請將這裡換成你 ESP32 實際連上 Wi-Fi 後印出的 IP 地址
-        const esp32API = "http://192.168.1.100/api/all-status"; 
-
-        // 建立一個定時器，每 3 秒鐘去跟 ESP32 要一次最新資料
-        setInterval(() => {
-            fetch(esp32API)
-                .then(response => response.json()) // 把拿到的資料轉成 JSON 格式
+        // --- 6. 【獲取資料】自動向 ESP32 拿取最新感測器與硬體狀態 ---
+        function fetchSystemStatus() {
+            fetch(`http://${ESP32_IP}/api/all-status`)
+                .then(response => response.json())
                 .then(data => {
-                    console.log("成功收到主機資料：", data);
+                    const now = Date.now();
 
-                    // 1. 更新溫濕度 (對應 HTML 裡的 id="temp-indoor" 和 id="humidity")
-                    if(document.getElementById('temp-indoor')) {
-                        document.getElementById('temp-indoor').innerText = data.temp.toFixed(1);
-                    }
-                    if(document.getElementById('humidity')) {
-                        document.getElementById('humidity').innerText = data.hum.toFixed(0);
-                    }
+                   
+        // --- 核心：統一更新邏輯的輔助函式 ---
+        const updateLogic = (key, elementId, sensorValue) => {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const card = el.closest('.organic-card');
 
-                    // 2. 更新電池電量與進度條 (對應 id="battery-text" 和 id="battery-bar")
-                    if(document.getElementById('battery-text')) {
+            // --- 1. 處理所有設備的顏色變化 (放在最外面，手動/自動都有效) ---
+            // A. 遮陽簾顏色
+            if (key === 'awning') {
+                if (sensorValue.includes("開")) {
+                    el.style.color = "#3b82f6"; // 藍色 (已開啟)
+                } else {
+                    el.style.color = "#888888"; // 灰色 (已關閉/收起)
+                }
+            } 
+            // B. 安全門鎖顏色
+            else if (key === 'lock') {
+                if (sensorValue.includes("解鎖")) {
+                    el.style.color = "#E07A5F"; // 磚紅色 (警告/解鎖中)
+                } else {
+                    el.style.color = "#5D544F"; // 深灰色 (安全/鎖定中)
+                }
+            } 
+            // C. 循環風扇顏色
+            else if (key === 'fan') {
+                if (sensorValue.includes("全速")) {
+                    el.className = "text-sm font-bold text-terracotta"; // 保留你的 Tailwind class
+                    el.style.color = "#E07A5F"; // 雙重保險
+                } else if (sensorValue.includes("通風") || sensorValue.includes("低速")) {
+                    el.className = "text-sm font-bold text-moss";
+                    el.style.color = "#6b8e23"; // 雙重保險
+                } else {
+                    el.className = "text-sm font-bold text-stone-500";
+                    el.style.color = "#888888";
+                }
+            }
+
+            // --- 2. 處理鎖定與數據更新 ---
+            // 防呆：如果是沒有設定手動鎖定的設備 (例如 pcm)，直接更新文字並結束
+            if (!overrides[key]) { 
+                el.innerText = sensorValue;
+                return;
+            }
+
+            const now = Date.now();
+            // 判斷是否鎖定：(被按下強制固定) 或 (手動模式且未滿 5 分鐘)
+            const isLocked = overrides[key].isFixed || (overrides[key].isManual && (now - overrides[key].lastTime < OVERRIDE_DURATION));
+
+            if (!isLocked) {
+                // 如果沒被鎖定：接受 Mega 傳來的自動數據
+                overrides[key].isManual = false;
+                overrides[key].isFixed = false;
+                el.innerText = sensorValue; // 顯示感測器傳回的真實文字
+                card.style.opacity = "1";   // 恢復卡片全亮
+            } else {
+                // 如果鎖定中：讓卡片維持微透明 (0.7)，視覺提醒你現在是手動/固定模式
+                card.style.opacity = "0.7";
+            }
+        };
+
+                    // 執行四個卡片的更新 )
+                    updateLogic('awning', 'awning-status', data.awning);
+                    updateLogic('lock', 'lock-status', data.lock);
+                    updateLogic('fan', 'fan-status', data.fan);
+                    //updateLogic('pcm', 'thermostat-status', data.pcm_m); 
+
+                    // 更新溫濕度
+                    if(data.temp) document.getElementById('temp-indoor').innerText = data.temp.toFixed(1);
+                    if(data.hum) document.getElementById('humidity').innerText = data.hum.toFixed(0);
+
+                    // 更新電池進度條
+                    if(data.bat !== undefined) {
                         document.getElementById('battery-text').innerText = data.bat + '%';
-                    }
-                    if(document.getElementById('battery-bar')) {
                         document.getElementById('battery-bar').style.width = data.bat + '%';
                     }
 
-                    // 3. 更新風扇狀態 (對應 id="fan-status")
-                    if(document.getElementById('fan-status')) {
-                        document.getElementById('fan-status').innerText = data.fan;
-                        // 如果風扇全速運轉，可以把字體變色提醒
-                        if(data.fan === "全速運轉") {
-                            document.getElementById('fan-status').className = "text-sm font-bold text-terracotta";
+                    // --- 更新 PCM 恆溫狀態 (與空氣品質邏輯一致) ---
+                    if (data.pcm_m) {
+                        const pcmEl = document.getElementById('thermostat-status');
+                        pcmEl.innerText = data.pcm_m;
+
+                        if (data.pcm_m.includes("吸熱")) {
+                            // 吸熱中：使用黃橘色 (代表能量儲存中)
+                            pcmEl.className = "text-sm font-bold text-paw-yellow";
+                        } else if (data.pcm_m.includes("放熱")) {
+                            // 放熱中：使用磚紅色 (代表正在釋放熱量恆溫)
+                            pcmEl.className = "text-sm font-bold text-terracotta";
                         } else {
-                            document.getElementById('fan-status').className = "text-sm font-bold text-stone-500";
+                            // 穩定：使用森林綠 (代表達到平衡)
+                            pcmEl.className = "text-sm font-bold text-moss";
                         }
                     }
 
-                    // 4. 更新空氣品質 (利用 CO2 數值判斷，寫入 id="air-quality")
-                    if(document.getElementById('air-quality')) {
-                        const airSpan = document.getElementById('air-quality');
-                        // 假設 Mega 傳來的 JSON 裡有包含 CO2 (如果你有加進去的話)
-                        if(data.co2) {
-                            if (data.co2 < 800) {
-                                airSpan.innerText = "清新";
-                                airSpan.className = "text-3xl font-bold text-moss";
-                            } else if (data.co2 < 1200) {
-                                airSpan.innerText = "普通";
-                                airSpan.className = "text-3xl font-bold text-paw-yellow";
-                            } else {
-                                airSpan.innerText = "微悶";
-                                airSpan.className = "text-3xl font-bold text-terracotta";
-                            }
+                    // 更新空氣品質 (依據 CO2 濃度)
+                    if(data.co2) {
+                        const airEl = document.getElementById('air-quality');
+                        if (data.co2 <= 800) {
+                            airEl.innerText = "清新";
+                            airEl.className = "text-3xl font-bold text-moss";
+                        } else if (data.co2 <= 1200) {
+                            airEl.innerText = "普通";
+                            airEl.className = "text-3xl font-bold text-paw-yellow";
+                        } else {
+                            airEl.innerText = "微悶";
+                            airEl.className = "text-3xl font-bold text-terracotta";
                         }
                     }
                     
-                    // 5. 更新 PCM 恆溫狀態 (這裡你可以選擇把 UI 上的「恆溫控制」改成顯示 PCM 狀態)
-                    if(document.getElementById('thermostat-status')) {
-                        document.getElementById('thermostat-status').innerText = data.pcm_m;
+                    // 光照狀態 (對應追日/防曬/補光)
+                    if(data.sun) {
+                        const sunEl = document.getElementById('sunlight-status');
+                        sunEl.innerText = data.sun;
+                        if(data.sun === "強烈西曬") sunEl.className = "text-2xl font-bold text-terracotta";
+                        else if(data.sun === "光芒微弱") sunEl.className = "text-2xl font-bold text-soft-blue";
+                        else sunEl.className = "text-2xl font-bold text-stone-700";
                     }
 
+                    // 更新寵物狀態 (亂竄 / 睡覺 / 吃飯 / 外出)
+                    if(data.pet) {
+                        const petEl = document.getElementById('pet-status');
+                        petEl.innerText = data.pet;
+                        if(data.pet === "寶貝在窩裡亂竄") petEl.className = "text-[12px] font-bold text-terracotta tracking-widest animate-pulse";
+                        else petEl.className = "text-[12px] font-bold text-clay tracking-widest";
+                    }
                 })
                 .catch(error => {
-                    console.error("無法連線到 ESP32，請檢查 Wi-Fi 或 IP 地址：", error);
+                    console.log("等待硬體連線中...");
                 });
-        }, 3000); // 3000 毫秒 = 3 秒更新一次 
+        }
+
+        // --- 處理「單一鎖頭」點擊 ---
+        function toggleSingleLock(device, iconId, event) {
+            event.stopPropagation(); // 阻擋點擊事件傳遞給底下的卡片
+            
+            // 判斷現在是不是固定狀態，並且反轉它
+            const isCurrentlyFixed = overrides[device].isFixed;
+            const newMode = isCurrentlyFixed ? "auto" : "fixed"; 
+            
+            // 發送給 ESP32 (狀態傳 KEEP 代表只改鎖定模式，不動馬達)
+            fetch(`http://${ESP32_IP}/api/toggle?device=${device}&state=KEEP&mode=${newMode}`)
+                .then(() => {
+                    if (newMode === "fixed") {
+                        overrides[device].isFixed = true;
+                        overrides[device].isManual = true; // 強制固定也算是手動的一種
+                        document.getElementById(iconId).innerText = "🔒";
+                    } else {
+                        overrides[device].isFixed = false;
+                        overrides[device].isManual = false; // 解除固定，直接歸零
+                        document.getElementById(iconId).innerText = "🔓";
+                    }
+                })
+                .catch(err => console.log("切換鎖定失敗"));
+                alert("設定失敗！請檢查 ESP32 伺服器是否連線。");
+        }
+
+        // --- 處理「全局強制/解除」點擊 ---
+        function setGlobalLock(isLockAll) {
+            const newMode = isLockAll ? "fixed" : "auto";
+            const devices = ['awning', 'lock', 'fan']; // 受控的設備清單
+
+            devices.forEach(device => {
+                fetch(`http://${ESP32_IP}/api/toggle?device=${device}&state=KEEP&mode=${newMode}`)
+                    .then(() => {
+                        const icon = document.getElementById(`lock-icon-${device}`);
+                        if (isLockAll) {
+                            overrides[device].isFixed = true;
+                            overrides[device].isManual = true;
+                            if(icon) icon.innerText = "🔒";
+                        } else {
+                            overrides[device].isFixed = false;
+                            overrides[device].isManual = false;
+                            if(icon) icon.innerText = "🔓";
+                        }
+                    });
+            });
+        }
+
+        // 啟動定時器，每 3 秒自動抓取一次狀態
+        setInterval(fetchSystemStatus, 3000);
+        // 網頁載入時先抓一次
+        fetchSystemStatus();
+
     </script>
 </body>
 </html>
