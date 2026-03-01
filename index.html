@@ -336,26 +336,64 @@
         };
 
         function toggleDevice(device, elementId) {
-            // 1. 先找出現在的狀態（開或關）
             const el = document.getElementById(device + "-status");
-            const isActive = el && (el.innerText.includes("開") || el.innerText.includes("解鎖") || el.innerText.includes("全速"));
-            const newState = isActive ? "CLOSE" : "OPEN";
+            let currentState = "CLOSE"; // 預設為關
+            
+            // 1. 先從目前的文字判斷現在是什麼狀態
+            if (el.innerText.includes("全速")) currentState = "OPEN";
+            else if (el.innerText.includes("低速")) currentState = "LOW";
+            else currentState = "CLOSE";
 
-            // 2. 發送指令給 ESP32
+            // 2. 決定「下一個」狀態是什麼 (循環切換)
+            let newState;
+            if (currentState === "CLOSE") newState = "OPEN"; // 關閉 -> 變全速
+            else if (currentState === "OPEN") newState = "LOW"; // 全速 -> 變低速
+            else newState = "CLOSE"; // 低速 -> 變關閉
+
+            // 3. 發送請求給 ESP32 (注意：這會傳送 state=OPEN, LOW 或 CLOSE)
             fetch(`http://${ESP32_IP}/api/toggle?device=${device}&state=${newState}&mode=MANUAL`)
                 .then(response => {
-                    if (!response.ok) throw new Error("網路回應不正常");
+                    if (!response.ok) throw new Error("連線失敗");
                     return response.json();
                 })
                 .then(data => {
-                    console.log(device + " 設定成功");
-                    // 立即進入手動模式 5 分鐘
+                    // 立即改字，讓使用者覺得反應很快
+                    // 判斷：如果是「遮陽簾(awning)」，啟動模擬動畫
+                    if (device === "awning") {
+                        // (1) 先把字改成橘色，並顯示「移動中」
+                        el.innerText = "窗簾正在" + (newState === "OPEN" ? "展開" : "收納") + "中...";
+                        el.style.color = "#f97316"; // 橘色，提醒使用者正在運作
+                        el.style.fontWeight = "bold";
+
+                        // (2) 使用 setTimeout 計時器：30000 毫秒 = 30 秒
+                        // 這段程式碼會「倒數 30 秒」後才執行括號內的內容
+                        setTimeout(() => {
+                            if (newState === "OPEN") {
+                                el.innerText = "目前狀態：已展開";
+                            } else {
+                                el.innerText = "目前狀態：已收納";
+                            }
+                            el.style.color = ""; // 把顏色改回預設值
+                            el.style.fontWeight = "";
+                            console.log("模擬：窗簾馬達應已停止");
+                        }, 30000); 
+
+                    } else {
+                        // 如果是其他設備（風扇、門鎖），直接換字就好，不用等
+                        if (device === "fan") {
+                            if (newState === "OPEN") el.innerText = "運轉中：全速";
+                            else if (newState === "LOW") el.innerText = "運轉中：低速";
+                            else el.innerText = "目前狀態：關閉";
+                        } else if (device === "lock") {
+                            el.innerText = (newState === "OPEN") ? "目前狀態：已解鎖" : "目前狀態：已鎖定";
+                        }
+                    }
+
+                    // 記錄手動模式
                     overrides[device].isManual = true;
                     overrides[device].lastTime = Date.now();
                 })
                 .catch(error => {
-                    // 💡 這裡就是你要的警告視窗
-                    console.error("連線失敗:", error);
                     alert("設定失敗！請檢查 ESP32 伺服器是否連線。");
                 });
         }
@@ -372,21 +410,32 @@
                     return response.json();
                 })
                 .then(data => {
-                    // 成功後更新狀態
+                    // 1. 切換邏輯狀態
                     overrides[device].isFixed = !isCurrentlyFixed;
-                    if (isCurrentlyFixed) overrides[device].isManual = false;
                     
-                    // 更新圖示
-                    document.getElementById(iconId).innerText = overrides[device].isFixed ? " 🔒 " : " 🔓 ";
-                })
+                    // 2. 如果從「鎖定」變回「自動」，我們順便把「手動計時」清空
+                    // 這樣感測器就能立刻接手控制，不需要等 5 分鐘
+                    if (isCurrentlyFixed) {
+                        overrides[device].isManual = false;
+                        overrides[device].lastTime = 0; 
+                    }
+                    
+                    // 3. 立即更新圖示 (讓手感更好)
+                    const iconEl = document.getElementById(iconId);
+                    if (iconEl) {
+                        iconEl.innerText = overrides[device].isFixed ? " 🔒 " : " 🔓 ";
+                    }
+                    
+                    console.log(device + " 模式已切換為: " + (overrides[device].isFixed ? "固定" : "自動"))
+                   })
                 .catch(error => {
-                    // 💡 這裡也會跳出警告視窗
+                    // 這裡會跳出警告視窗
                     console.error("連線失敗:", error);
                     alert("設定失敗！請檢查 ESP32 伺服器是否連線。");
                 });
         }
 
-        let isAlerting = false; // 💡 增加一個「正在報警中」的旗標
+        let isAlerting = false; // 增加一個「正在報警中」的旗標
 
         function adjustLight(value) {
             // 1. 更新網頁上的百分比文字 (這個沒連線也可以動，所以放外面)
@@ -403,19 +452,22 @@
                 })
                 .then(data => {
                     console.log("亮度設定成功");
-                    overrides[device].isManual = true;
-                    overrides[device].lastTime = Date.now();
+                    // 這函數專屬夜燈
+                    if (overrides['light']) {
+                        overrides['light'].isManual = true;
+                        overrides['light'].lastTime = Date.now();
+                    }
                 })
                 .catch(error => {
                     console.error("錯誤:", error);
                     
-                    // 💡 關鍵：如果已經在跳警告了，就不要再跳第二次
+                    // 如果已經在跳警告了，就不要再跳第二次
                     if (!isAlerting) {
                         isAlerting = true; 
                         alert("設定失敗！請檢查 ESP32 伺服器是否連線。");
                         
                         // 3秒後自動解除鎖定，讓下次調整還能跳警告
-                        setTimeout(() => { isAlerting = false; }, 3000);
+                        setTimeout(() => { isAlerting = false; }, 1000);
                     }
                 });
         }
@@ -447,7 +499,10 @@
                 // 如果是夜燈，要同步滑桿位置
                 if (key === 'light') {
                     const slider = document.getElementById('light-slider');
-                    slider.value = sensorValue; // 讓滑桿跟著感測器跑
+                    // 只有在「不是手動模式」或「手動已過期」時，才讓網頁自動去動滑桿
+                    if (!isRecentManual) {
+                        slider.value = sensorValue;
+                    }
                     el.innerText = "自動調節中: " + sensorValue + "%";
                 } else {
                     el.innerText = sensorValue; // 更新遮陽、門鎖、風扇文字
@@ -602,8 +657,8 @@
                     console.log("等待硬體連線中...");
                 });
         
-        // 啟動定時器，每 3 秒自動抓取一次狀態
-        }, 3000);
+        // 啟動定時器，每 5 秒自動抓取一次狀態
+        }, 5000);//3000
         
 
         // --- 1. 攝影機放大/縮小邏輯 ---
@@ -672,7 +727,7 @@
                 .then(response => response.json())               
                 .then(data => {
                     if (data.status === "success") {
-                        // 💡 小技巧：按下後立即改字，不用等 3 秒後的更新
+                        // 按下後立即改字，不用等 3 秒後的更新
                         document.getElementById('last-fed-time').innerText = "最後餵食：剛剛";
                         alert("小管家：點心噴發中！");
                     }
